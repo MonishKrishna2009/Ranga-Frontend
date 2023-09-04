@@ -27,20 +27,35 @@ const Cart = () => {
 
   const handlePayment = async () => {
     try {
-        setLoading(true);
-        const stripe = await stripePromise;
-        const res = await makePaymentRequest("/api/orders", {
-            products: cartItems,
-        });
+      setLoading(true);
+  
+      // Generate a random order ID
+      const orderId = Math.floor(Math.random() * Math.floor(Date.now()));
+  
+      // Include the generated order ID in the payload
+      const payload = {
+        products: cartItems,
+        orderid: orderId, // Include the order ID in the payload
+      };
+  
+      const stripe = await stripePromise;
+      const res = await makePaymentRequest("/api/orders", payload);
+  
+  
+      if (res && res.stripeSession && res.stripeSession.id) {
         await stripe.redirectToCheckout({
-            sessionId: res.stripeSession.id,
+          sessionId: res.stripeSession.id,
         });
+      } else {
+        // Handle the case where the response does not contain the expected data
+        console.error("Invalid server response:", res);
+      }
     } catch (error) {
-        setLoading(false);
-        console.log(error);
+      setLoading(false);
+      console.error("Payment Error:", error);
     }
-};
-
+  };
+  
   return (
     <div className="w-full md:py-20">
       <Wrapper>
@@ -88,11 +103,11 @@ const Cart = () => {
 
                 {/* BUTTON START */}
                 <button
-                    className="w-full py-4 rounded-full bg-black text-white text-lg font-medium transition-transform active:scale-95 mb-3 hover:opacity-75 flex items-center gap-2 justify-center"
-                            onClick={handlePayment}
+                  className="w-full py-4 rounded-full bg-black text-white text-lg font-medium transition-transform active:scale-95 mb-3 hover:opacity-75 flex items-center gap-2 justify-center"
+                  onClick={handlePayment}
                 >
-                Checkout
-                {loading && <img src="/spinner.svg" />}
+                  Checkout
+                  {loading && <img src="/spinner.svg" />}
                 </button>
                 {/* BUTTON END */}
               </div>
