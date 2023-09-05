@@ -6,7 +6,6 @@ import CartItem from "@/components/CartItem";
 import { useSelector } from "react-redux";
 import { loadStripe } from "@stripe/stripe-js";
 import { makePaymentRequest } from "@/utils/api";
-import { addToCart, removeFromCart, updateCart } from "@/store/cartSlice";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
@@ -16,6 +15,7 @@ const Cart = () => {
 
   const subTotal = useMemo(() => {
     return cartItems.reduce((total, item) => {
+      // Calculate the item price based on selected size and quantity
       const selectedSizeData = item.attributes.size.data.find(
         (size) => size.size === item.selectedSize
       );
@@ -29,24 +29,27 @@ const Cart = () => {
   const handlePayment = async () => {
     try {
       setLoading(true);
-
-      const OID = Math.floor(Math.random() * Date.now());
-
+  
+      // Generate a random order ID
+      const orderId = Math.floor(Math.random() * Math.floor(Date.now()));
+  
+      // Include the generated order ID in the payload
       const payload = {
         products: cartItems,
-        orderid: OID,
+        orderid: orderId, // Include the order ID in the payload
       };
-
+  
       const stripe = await stripePromise;
       const res = await makePaymentRequest("/api/orders", payload);
-
+  
+      console.log("Server Response:", res);
+  
       if (res && res.stripeSession && res.stripeSession.id) {
-        // Redirect to Stripe checkout
         await stripe.redirectToCheckout({
           sessionId: res.stripeSession.id,
         });
       } else {
-        setLoading(false);
+        // Handle the case where the response does not contain the expected data
         console.error("Invalid server response:", res);
       }
     } catch (error) {
@@ -54,7 +57,7 @@ const Cart = () => {
       console.error("Payment Error:", error);
     }
   };
-
+  
   return (
     <div className="w-full md:py-20">
       <Wrapper>
