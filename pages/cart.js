@@ -16,11 +16,12 @@ const Cart = () => {
 
   const subTotal = useMemo(() => {
     return cartItems.reduce((total, item) => {
-      // Calculate the item price based on selected size and quantity
       const selectedSizeData = item.attributes.size.data.find(
         (size) => size.size === item.selectedSize
       );
-      const itemPrice = selectedSizeData ? selectedSizeData.price : item.attributes.price;
+      const itemPrice = selectedSizeData
+        ? selectedSizeData.price
+        : item.attributes.price;
       return total + itemPrice * item.quantity;
     }, 0);
   }, [cartItems]);
@@ -28,26 +29,24 @@ const Cart = () => {
   const handlePayment = async () => {
     try {
       setLoading(true);
-  
-      // Generate a random order ID
-      const orderId = Math.floor(Math.random() * Math.floor(Date.now()));
-  
-      // Include the generated order ID in the payload
+
+      const OID = Math.floor(Math.random() * Date.now());
+
       const payload = {
         products: cartItems,
-        orderid: orderId, // Include the order ID in the payload
+        orderid: OID,
       };
-  
+
       const stripe = await stripePromise;
       const res = await makePaymentRequest("/api/orders", payload);
-  
-  
+
       if (res && res.stripeSession && res.stripeSession.id) {
+        // Redirect to Stripe checkout
         await stripe.redirectToCheckout({
           sessionId: res.stripeSession.id,
         });
       } else {
-        // Handle the case where the response does not contain the expected data
+        setLoading(false);
         console.error("Invalid server response:", res);
       }
     } catch (error) {
@@ -55,7 +54,7 @@ const Cart = () => {
       console.error("Payment Error:", error);
     }
   };
-  
+
   return (
     <div className="w-full md:py-20">
       <Wrapper>
@@ -117,7 +116,7 @@ const Cart = () => {
           </>
         )}
 
-        {/* This is empty screen */}
+        {/* This is an empty cart */}
         {cartItems.length < 1 && (
           <div className="flex-[2] flex flex-col items-center pb-[50px] md:-mt-14">
             <Image
@@ -128,7 +127,7 @@ const Cart = () => {
             />
             <span className="text-xl font-bold">Your cart is empty</span>
             <span className="text-center mt-4">
-              Looks like you have not added anything in your cart.
+              Looks like you have not added anything to your cart.
               <br />
               Go ahead and explore top categories.
             </span>
